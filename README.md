@@ -64,3 +64,5 @@ export default defineConfig({
 ## 安装npm install postgres 
     创建db对象，给其他人调用
 ## 设计登录 next-auth
+## zod提供用户数据校验的工作的
+## 

@@ -40,3 +40,26 @@ npx shadcn-ui@latest init
 pnpm add drizzle-orm
 ## 安装drizzle-kit
 pnpm add drizzle-kit -d
+## 安装配置文件，在根目录新建 drizzle.config.ts
+   import { defineConfig } from 'drizzle-kit'
+export default defineConfig({
+  schema: "./src/server/db/schema.ts",
+  dialect: 'postgresql',
+  dbCredentials: {
+    host:'localhost',
+      port:5432,
+      user:'postgres',
+      password:'abc123456',
+      database:"postgres",
+      ssl: false
+  },
+  verbose: true,
+  strict: true,
+})
+##  安装驱动db，npm add pg -d
+##   npx drizzle-kit push
+    这时候已经连接上数据库，但是需要创建表，
+##  npx drizzle-kit studio
+    启动GUI  npx drizzle-kit studio
+## 安装npm install postgres 
+    创建db对象，给其他人调用

@@ -63,3 +63,4 @@ export default defineConfig({
     启动GUI  npx drizzle-kit studio
 ## 安装npm install postgres 
     创建db对象，给其他人调用
+## 设计登录 next-auth

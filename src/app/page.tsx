@@ -68,6 +68,8 @@ const ContentPage = () => {
       previewImages: [], keywords: '', description: '', tags: '', sections: []
     }]))
   );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [reference, setReference] = useState('');
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
 
@@ -180,169 +182,244 @@ const ContentPage = () => {
     setReferenceFile(file);
   };
 
+  const generateContent = async () => {
+    setIsGenerating(true);
+    try {
+      // 这里调用后端API来生成内容
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reference, referenceType: referenceFile ? 'file' : 'text' }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setContentData(prev => ({
+          ...prev,
+          [languages[0]]: data // 假设第一种语言是英语
+        }));
+      } else {
+        throw new Error('Content generation failed');
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      alert('Failed to generate content');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const translateContent = async () => {
+    setIsTranslating(true);
+    try {
+      // 这里调用后端API来翻译内容
+      const response = await fetch('/api/translate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: contentData[languages[0]] }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setContentData(prev => ({
+          ...prev,
+          ...data
+        }));
+      } else {
+        throw new Error('Translation failed');
+      }
+    } catch (error) {
+      console.error('Error translating content:', error);
+      alert('Failed to translate content');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return (
     <PageContainer title="Multilingual Content Editor" description="Edit multilingual content">
       <ReferenceUploader onReferenceChange={handleReferenceChange} />
       <DashboardCard title="Multilingual Content Editor">
         <Box>
-          <StyledTabs 
-            value={currentLang} 
-            onChange={handleChange} 
-            variant="scrollable" 
-            scrollButtons="auto"
-            aria-label="language tabs"
-          >
-            {languages.map((lang, index) => (
-              <StyledTab key={lang} label={lang} value={index} />
-            ))}
-          </StyledTabs>
-          <Box sx={{ mt: 4, px: 2 }}> {/* 增加了上边距和左右内边距 */}
-            <TextField
-              fullWidth
-              label="Title"
-              value={contentData[languages[currentLang]].title}
-              onChange={(e) => updateField('title', e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Subtitle"
-              value={contentData[languages[currentLang]].subtitle}
-              onChange={(e) => updateField('subtitle', e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Website"
-              value={contentData[languages[currentLang]].url}
-              onChange={(e) => updateField('url', e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Order"
-              type="number"
-              value={contentData[languages[currentLang]].order}
-              onChange={(e) => updateField('order', parseInt(e.target.value))}
-              sx={{ mb: 2 }}
-            />
-            <Select
-              fullWidth
-              value={contentData[languages[currentLang]].category}
-              onChange={(e) => updateField('category', e.target.value)}
-              sx={{ mb: 2 }}
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              onClick={generateContent}
+              disabled={isGenerating}
+              sx={{ mr: 1 }}
             >
-              <MenuItem value="">选择类别</MenuItem>
-              <MenuItem value="AI Learning">AI Learning</MenuItem>
-              <MenuItem value="Technical Research">Technical Research</MenuItem>
-              {/* 添加更多类别选项 */}
-            </Select>
-            <Box sx={{ mb: 2 }}>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="raised-button-file"
-                multiple
-                type="file"
-                onChange={handleImageUpload}
+              {isGenerating ? 'Generating...' : 'AI Generate Content'}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={translateContent}
+              disabled={isTranslating}
+            >
+              {isTranslating ? 'Translating...' : 'Translate to All Languages'}
+            </Button>
+          </Box>
+          <Box>
+            <StyledTabs 
+              value={currentLang} 
+              onChange={handleChange} 
+              variant="scrollable" 
+              scrollButtons="auto"
+              aria-label="language tabs"
+            >
+              {languages.map((lang, index) => (
+                <StyledTab key={lang} label={lang} value={index} />
+              ))}
+            </StyledTabs>
+            <Box sx={{ mt: 4, px: 2 }}> {/* 增加了上边距和左右内边距 */}
+              <TextField
+                fullWidth
+                label="Title"
+                value={contentData[languages[currentLang]].title}
+                onChange={(e) => updateField('title', e.target.value)}
+                sx={{ mb: 2 }}
               />
-              <label htmlFor="raised-button-file">
-                <Button variant="contained" component="span">
-                  Upload Preview Image <UploadIcon />
-                </Button>
-              </label>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', mt: 1 }}>
-                {contentData[languages[currentLang]].previewImages.map((img, index) => (
-                  <Box key={index} sx={{ position: 'relative', m: 1 }}>
-                    <img src={img} alt={`Preview ${index + 1}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
-                    <IconButton
-                      size="small"
-                      onClick={() => removeImage(index)}
-                      sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-            <TextField
-              fullWidth
-              label="Keywords"
-              value={contentData[languages[currentLang]].keywords}
-              onChange={(e) => updateField('keywords', e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Description"
-              multiline
-              rows={4}
-              value={contentData[languages[currentLang]].description}
-              onChange={(e) => updateField('description', e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Tags"
-              value={contentData[languages[currentLang]].tags}
-              onChange={(e) => updateField('tags', e.target.value)}
-              helperText="Separate multiple tags with commas"
-              sx={{ mb: 2 }}
-            />
-            {contentData[languages[currentLang]].sections.map((section, index) => (
-              <Box key={section.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc' }}>
-                <TextField
-                  fullWidth
-                  label={`Section ${index + 1} Title`}
-                  value={section.title}
-                  onChange={(e) => {
-                    const newSections = [...contentData[languages[currentLang]].sections];
-                    newSections[index] = { ...newSections[index], title: e.target.value };
-                    updateField('sections', newSections);
-                  }}
-                  sx={{ mb: 1 }}
+              <TextField
+                fullWidth
+                label="Subtitle"
+                value={contentData[languages[currentLang]].subtitle}
+                onChange={(e) => updateField('subtitle', e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Website"
+                value={contentData[languages[currentLang]].url}
+                onChange={(e) => updateField('url', e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Order"
+                type="number"
+                value={contentData[languages[currentLang]].order}
+                onChange={(e) => updateField('order', parseInt(e.target.value))}
+                sx={{ mb: 2 }}
+              />
+              <Select
+                fullWidth
+                value={contentData[languages[currentLang]].category}
+                onChange={(e) => updateField('category', e.target.value)}
+                sx={{ mb: 2 }}
+              >
+                <MenuItem value="">选择类别</MenuItem>
+                <MenuItem value="AI Learning">AI Learning</MenuItem>
+                <MenuItem value="Technical Research">Technical Research</MenuItem>
+                {/* 添加更多类别选项 */}
+              </Select>
+              <Box sx={{ mb: 2 }}>
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="raised-button-file"
+                  multiple
+                  type="file"
+                  onChange={handleImageUpload}
                 />
-                {section.content.map((content, contentIndex) => (
+                <label htmlFor="raised-button-file">
+                  <Button variant="contained" component="span">
+                    Upload Preview Image <UploadIcon />
+                  </Button>
+                </label>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', mt: 1 }}>
+                  {contentData[languages[currentLang]].previewImages.map((img, index) => (
+                    <Box key={index} sx={{ position: 'relative', m: 1 }}>
+                      <img src={img} alt={`Preview ${index + 1}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                      <IconButton
+                        size="small"
+                        onClick={() => removeImage(index)}
+                        sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+              <TextField
+                fullWidth
+                label="Keywords"
+                value={contentData[languages[currentLang]].keywords}
+                onChange={(e) => updateField('keywords', e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={4}
+                value={contentData[languages[currentLang]].description}
+                onChange={(e) => updateField('description', e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Tags"
+                value={contentData[languages[currentLang]].tags}
+                onChange={(e) => updateField('tags', e.target.value)}
+                helperText="Separate multiple tags with commas"
+                sx={{ mb: 2 }}
+              />
+              {contentData[languages[currentLang]].sections.map((section, index) => (
+                <Box key={section.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc' }}>
                   <TextField
-                    key={contentIndex}
                     fullWidth
-                    multiline
-                    rows={3}
-                    label={`Content ${contentIndex + 1}`}
-                    value={content}
+                    label={`Section ${index + 1} Title`}
+                    value={section.title}
                     onChange={(e) => {
                       const newSections = [...contentData[languages[currentLang]].sections];
-                      newSections[index] = {
-                        ...newSections[index],
-                        content: [
-                          ...newSections[index].content.slice(0, contentIndex),
-                          e.target.value,
-                          ...newSections[index].content.slice(contentIndex + 1)
-                        ]
-                      };
+                      newSections[index] = { ...newSections[index], title: e.target.value };
                       updateField('sections', newSections);
                     }}
                     sx={{ mb: 1 }}
                   />
-                ))}
-                <Button onClick={() => {
-                  const newSections = [...contentData[languages[currentLang]].sections];
-                  newSections[index] = {
-                    ...newSections[index],
-                    content: [...newSections[index].content, '']
-                  };
-                  updateField('sections', newSections);
-                }}>
-                  添加内容
-                </Button>
-              </Box>
-            ))}
-            <Button onClick={addSection}>Add New Section</Button>
+                  {section.content.map((content, contentIndex) => (
+                    <TextField
+                      key={contentIndex}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      label={`Content ${contentIndex + 1}`}
+                      value={content}
+                      onChange={(e) => {
+                        const newSections = [...contentData[languages[currentLang]].sections];
+                        newSections[index] = {
+                          ...newSections[index],
+                          content: [
+                            ...newSections[index].content.slice(0, contentIndex),
+                            e.target.value,
+                            ...newSections[index].content.slice(contentIndex + 1)
+                          ]
+                        };
+                        updateField('sections', newSections);
+                      }}
+                      sx={{ mb: 1 }}
+                    />
+                  ))}
+                  <Button onClick={() => {
+                    const newSections = [...contentData[languages[currentLang]].sections];
+                    newSections[index] = {
+                      ...newSections[index],
+                      content: [...newSections[index].content, '']
+                    };
+                    updateField('sections', newSections);
+                  }}>
+                    添加内容
+                  </Button>
+                </Box>
+              ))}
+              <Button onClick={addSection}>Add New Section</Button>
+            </Box>
+            <Button onClick={saveContent} variant="contained" color="primary" sx={{ mt: 2 }}>
+              Save Content
+            </Button>
           </Box>
-          <Button onClick={saveContent} variant="contained" color="primary" sx={{ mt: 2 }}>
-            Save Content
-          </Button>
         </Box>
       </DashboardCard>
     </PageContainer>

@@ -56,7 +56,8 @@ export default defineConfig({
   verbose: true,
   strict: true,
 })
-##  安装驱动db，npm add pg -d
+##  npm add pg -d
+   安装驱动db，
 ##   npx drizzle-kit push
     这时候已经连接上数据库，但是需要创建表，
 ##  npx drizzle-kit studio

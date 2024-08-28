@@ -64,6 +64,10 @@ export default defineConfig({
     启动GUI  npx drizzle-kit studio
 ## 安装npm install postgres 
     创建db对象，给其他人调用
+
+##0828 完成了参考输入框和预览的规划
+
+
 ## 设计登录 next-auth
 ## zod提供用户数据校验的工作的
 ## 

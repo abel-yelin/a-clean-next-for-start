@@ -5,6 +5,8 @@ import { Upload as UploadIcon, Delete as DeleteIcon } from '@mui/icons-material'
 import dynamic from 'next/dynamic';
 const PageContainer = dynamic(() => import('./components/PageContainer'), { ssr: false });
 import DashboardCard from '@/app/components/DashboardCard';
+import ReferenceUploader from '@/app/components/ReferenceUploader';
+
 // 自定义样式的Tabs组件
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   borderBottom: '1px solid #e8e8e8',
@@ -66,6 +68,8 @@ const ContentPage = () => {
       previewImages: [], keywords: '', description: '', tags: '', sections: []
     }]))
   );
+  const [reference, setReference] = useState('');
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
 
   useEffect(() => {
     // 加载数据
@@ -171,8 +175,14 @@ const ContentPage = () => {
     updateField('previewImages', newImages);
   };
 
+  const handleReferenceChange = (newReference: string, file: File | null) => {
+    setReference(newReference);
+    setReferenceFile(file);
+  };
+
   return (
     <PageContainer title="Multilingual Content Editor" description="Edit multilingual content">
+      <ReferenceUploader onReferenceChange={handleReferenceChange} />
       <DashboardCard title="Multilingual Content Editor">
         <Box>
           <StyledTabs 

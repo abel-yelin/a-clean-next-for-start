@@ -71,7 +71,7 @@ const ContentPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [reference, setReference] = useState('');
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     // 加载数据
@@ -177,9 +177,9 @@ const ContentPage = () => {
     updateField('previewImages', newImages);
   };
 
-  const handleReferenceChange = (newReference: string, file: File | null) => {
+  const handleReferenceChange = (newReference: string, files: File[]) => {
     setReference(newReference);
-    setReferenceFile(file);
+    setFiles(files); // 更新文件状态
   };
 
   const generateContent = async () => {
@@ -191,7 +191,7 @@ const ContentPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ reference, referenceType: referenceFile ? 'file' : 'text' }),
+        body: JSON.stringify({ reference, referenceType: files.length > 0 ? 'file' : 'text' }),
       });
       if (response.ok) {
         const data = await response.json();

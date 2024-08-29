@@ -21,6 +21,8 @@ function cleanAIResponse(text: string): string {
   text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
   // 替换不正确的引号
   text = text.replace(/[""]/g, '"');
+  // 移除控制字符
+  text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // 移除控制字符
   // 移除可能的额外空白字符
   return text.trim();
 }

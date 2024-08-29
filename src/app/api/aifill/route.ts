@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const { reference, referenceType, fieldsToGenerate } = await request.json();
+    const { reference, referenceType, fieldsToGenerate, images } = await request.json();
 
     // 如果参考是网址，先抓取内容
     let referenceContent = reference;
@@ -26,6 +26,24 @@ export async function POST(request: Request) {
         referenceContent = data.contents.join('\n'); // 合并多个网址的内容
       } else {
         throw new Error('抓取网页内容失败');
+      }
+    }
+
+    // 如果有图片，先分析图片内容
+    if (images && images.length > 0) {
+      const imageResponse = await fetch(`${process.env.BASE_URL}/api/checkpic`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ images }),
+      });
+
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        referenceContent += '\n' + imageData.texts.join('\n'); // 将提取的文本添加到参考内容中
+      } else {
+        throw new Error('分析图片内容失败');
       }
     }
 

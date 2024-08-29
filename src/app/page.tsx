@@ -82,7 +82,7 @@ const ContentPage = () => {
     sections: true,
   });
   const [aiGenerationStatus, setAiGenerationStatus] = useState('');
-  const [previewContent, setPreviewContent] = useState(null);
+  const [previewContent, setPreviewContent] = useState<Partial<ContentData> | null>(null);
   const [generationHistory, setGenerationHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -207,7 +207,7 @@ const ContentPage = () => {
         body: JSON.stringify({ reference, referenceType: files.length > 0 ? 'file' : 'text', fieldsToGenerate }),
       });
       if (response.ok) {
-        const data = await response.json();
+        const data: Partial<ContentData> = await response.json();
         setPreviewContent(data);
         setAiGenerationStatus('内容生成成功!');
       } else {
@@ -240,7 +240,7 @@ const ContentPage = () => {
           const newContentData = { ...prev };
           Object.entries(translations).forEach(([lang, content]) => {
             if (content && typeof content === 'object') {
-              newContentData[lang] = content;
+              newContentData[lang] = content as ContentData;
             } else {
               console.warn(`${lang} 翻译失败,保留原内容`);
             }
@@ -281,7 +281,9 @@ const ContentPage = () => {
         ...prev,
         [languages[0]]: {
           ...prev[languages[0]],
-          ...previewContent
+          ...Object.fromEntries(
+            Object.entries(previewContent).filter(([_, value]) => value !== undefined)
+          )
         }
       }));
       setPreviewContent(null);

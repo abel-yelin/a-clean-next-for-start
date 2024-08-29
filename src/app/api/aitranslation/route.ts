@@ -22,16 +22,15 @@ function cleanAIResponse(text: string): string {
   // 替换不正确的引号
   text = text.replace(/[""]/g, '"');
   // 移除可能的额外空白字符
-  text = text.trim();
-  return text;
+  return text.trim();
 }
 
 export async function POST(request: Request) {
   try {
-    const { content, targetLanguages } = await request.json();
+    const { content, targetLanguages }: { content: any, targetLanguages: string[] } = await request.json();
 
     const translations = await Promise.all(
-      targetLanguages.map(async (lang) => {
+      targetLanguages.map(async (lang: string) => {
         const prompt = `Translate the following English content to ${lang}. Return only the translated JSON without any additional text or formatting:
 
 ${JSON.stringify(content)}`;
@@ -56,8 +55,12 @@ ${JSON.stringify(content)}`;
 
     const result = Object.assign({}, ...translations);
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('翻译错误:', error);
-    return NextResponse.json({ error: '翻译失败', details: error.message }, { status: 500 });
+    if (error instanceof Error) {
+      return NextResponse.json({ error: '翻译失败', details: error.message }, { status: 500 });
+    } else {
+      return NextResponse.json({ error: '翻译失败', details: '未知错误' }, { status: 500 });
+    }
   }
 }

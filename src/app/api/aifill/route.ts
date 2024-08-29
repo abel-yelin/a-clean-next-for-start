@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import fetch from 'node-fetch'; // 确保安装了node-fetch
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,8 +10,27 @@ export async function POST(request: Request) {
   try {
     const { reference, referenceType, fieldsToGenerate } = await request.json();
 
+    // 如果参考是网址，先抓取内容
+    let referenceContent = reference;
+    if (referenceType === 'url') {
+      const response = await fetch(`${process.env.BASE_URL}/api/webspider`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ urls: [reference] }), // 如果有多个网址，可以传递数组
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        referenceContent = data.contents.join('\n'); // 合并多个网址的内容
+      } else {
+        throw new Error('抓取网页内容失败');
+      }
+    }
+
     const prompt = `根据以下参考资料,生成一篇地道英文的文章的结构化内容:
-    ${reference}
+    ${referenceContent}
     
     请只生成以下选中字段的JSON:
     {
@@ -24,7 +44,7 @@ export async function POST(request: Request) {
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
     });
 
     const generatedContent = JSON.parse(completion.choices[0].message.content || '{}');

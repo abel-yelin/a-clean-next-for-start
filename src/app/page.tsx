@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Tabs, Tab, Box, TextField, Button, Select, MenuItem, IconButton, styled, FormGroup, FormControlLabel, Checkbox, Tooltip } from '@mui/material';
+import { Tabs, Tab, Box, TextField, Button, Select, MenuItem, IconButton, styled, FormGroup, FormControlLabel, Checkbox, Tooltip, Typography, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { Upload as UploadIcon, Delete as DeleteIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
 const PageContainer = dynamic(() => import('./components/PageContainer'), { ssr: false });
@@ -81,6 +81,10 @@ const ContentPage = () => {
     tags: true,
     sections: true,
   });
+  const [aiGenerationStatus, setAiGenerationStatus] = useState('');
+  const [previewContent, setPreviewContent] = useState(null);
+  const [generationHistory, setGenerationHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     // 加载数据
@@ -193,6 +197,7 @@ const ContentPage = () => {
 
   const generateContent = async () => {
     setIsGenerating(true);
+    setAiGenerationStatus('正在生成内容...');
     try {
       const response = await fetch('/api/aifill', {
         method: 'POST',
@@ -203,34 +208,14 @@ const ContentPage = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        const newAiGeneratedFields = new Set(aiGeneratedFields);
-        Object.keys(data).forEach(key => {
-          if (data[key]) newAiGeneratedFields.add(key);
-        });
-        setAiGeneratedFields(newAiGeneratedFields);
-        setContentData(prev => ({
-          ...prev,
-          [languages[0]]: {
-            ...prev[languages[0]],
-            title: data.title || prev[languages[0]].title,
-            subtitle: data.subtitle || prev[languages[0]].subtitle,
-            description: data.description || prev[languages[0]].description,
-            keywords: data.keywords || prev[languages[0]].keywords,
-            tags: data.tags || prev[languages[0]].tags,
-            sections: data.sections || prev[languages[0]].sections,
-            // 保留原有的数据
-            previewImages: prev[languages[0]].previewImages,
-            url: prev[languages[0]].url,
-            order: prev[languages[0]].order,
-            category: prev[languages[0]].category,
-          }
-        }));
+        setPreviewContent(data);
+        setAiGenerationStatus('内容生成成功!');
       } else {
         throw new Error('Content generation failed');
       }
     } catch (error) {
       console.error('Error generating content:', error);
-      alert('Failed to generate content');
+      setAiGenerationStatus('内容生成失败,请重试');
     } finally {
       setIsGenerating(false);
     }
@@ -280,6 +265,19 @@ const ContentPage = () => {
     setAiGeneratedFields(new Set());
   };
 
+  const savePreviewContent = () => {
+    if (previewContent) {
+      setContentData(prev => ({
+        ...prev,
+        [languages[0]]: {
+          ...prev[languages[0]],
+          ...previewContent
+        }
+      }));
+      setPreviewContent(null);
+    }
+  };
+
   return (
     <PageContainer title="Multilingual Content Editor" description="Edit multilingual content">
       <ReferenceUploader onReferenceChange={handleReferenceChange} />
@@ -309,6 +307,17 @@ const ContentPage = () => {
               Reset AI Generated Content
             </Button>
           </Box>
+          <Typography color={aiGenerationStatus.includes('成功') ? 'success' : 'error'}>
+            {aiGenerationStatus}
+          </Typography>
+          {previewContent && (
+            <Box>
+              <Typography variant="h6">预览生成的内容</Typography>
+              {/* 显示预览内容 */}
+              <Button onClick={savePreviewContent}>保存到表单</Button>
+              <Button onClick={() => setPreviewContent(null)}>取消</Button>
+            </Box>
+          )}
           <Box>
             <StyledTabs 
               value={currentLang} 

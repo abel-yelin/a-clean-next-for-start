@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Tabs, Tab, Box, TextField, Button, Select, MenuItem, IconButton, styled } from '@mui/material';
-import { Upload as UploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Tabs, Tab, Box, TextField, Button, Select, MenuItem, IconButton, styled, FormGroup, FormControlLabel, Checkbox, Tooltip } from '@mui/material';
+import { Upload as UploadIcon, Delete as DeleteIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
 const PageContainer = dynamic(() => import('./components/PageContainer'), { ssr: false });
 import DashboardCard from '@/app/components/DashboardCard';
@@ -72,6 +72,15 @@ const ContentPage = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [reference, setReference] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [aiGeneratedFields, setAiGeneratedFields] = useState<Set<string>>(new Set());
+  const [fieldsToGenerate, setFieldsToGenerate] = useState({
+    title: true,
+    subtitle: true,
+    description: true,
+    keywords: true,
+    tags: true,
+    sections: true,
+  });
 
   useEffect(() => {
     // 加载数据
@@ -185,19 +194,36 @@ const ContentPage = () => {
   const generateContent = async () => {
     setIsGenerating(true);
     try {
-      // 这里调用后端API来生成内容
-      const response = await fetch('/api/generate-content', {
+      const response = await fetch('/api/aifill', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ reference, referenceType: files.length > 0 ? 'file' : 'text' }),
+        body: JSON.stringify({ reference, referenceType: files.length > 0 ? 'file' : 'text', fieldsToGenerate }),
       });
       if (response.ok) {
         const data = await response.json();
+        const newAiGeneratedFields = new Set(aiGeneratedFields);
+        Object.keys(data).forEach(key => {
+          if (data[key]) newAiGeneratedFields.add(key);
+        });
+        setAiGeneratedFields(newAiGeneratedFields);
         setContentData(prev => ({
           ...prev,
-          [languages[0]]: data // 假设第一种语言是英语
+          [languages[0]]: {
+            ...prev[languages[0]],
+            title: data.title || prev[languages[0]].title,
+            subtitle: data.subtitle || prev[languages[0]].subtitle,
+            description: data.description || prev[languages[0]].description,
+            keywords: data.keywords || prev[languages[0]].keywords,
+            tags: data.tags || prev[languages[0]].tags,
+            sections: data.sections || prev[languages[0]].sections,
+            // 保留原有的数据
+            previewImages: prev[languages[0]].previewImages,
+            url: prev[languages[0]].url,
+            order: prev[languages[0]].order,
+            category: prev[languages[0]].category,
+          }
         }));
       } else {
         throw new Error('Content generation failed');
@@ -238,6 +264,22 @@ const ContentPage = () => {
     }
   };
 
+  const resetAiGenerated = () => {
+    setContentData(prev => ({
+      ...prev,
+      [languages[currentLang]]: {
+        ...prev[languages[currentLang]],
+        title: '',
+        subtitle: '',
+        description: '',
+        keywords: '',
+        tags: '',
+        sections: [],
+      }
+    }));
+    setAiGeneratedFields(new Set());
+  };
+
   return (
     <PageContainer title="Multilingual Content Editor" description="Edit multilingual content">
       <ReferenceUploader onReferenceChange={handleReferenceChange} />
@@ -259,6 +301,13 @@ const ContentPage = () => {
             >
               {isTranslating ? 'Translating...' : 'Translate to All Languages'}
             </Button>
+            <Button
+              variant="outlined"
+              onClick={resetAiGenerated}
+              disabled={aiGeneratedFields.size === 0}
+            >
+              Reset AI Generated Content
+            </Button>
           </Box>
           <Box>
             <StyledTabs 
@@ -278,14 +327,42 @@ const ContentPage = () => {
                 label="Title"
                 value={contentData[languages[currentLang]].title}
                 onChange={(e) => updateField('title', e.target.value)}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: aiGeneratedFields.has('title') ? 'primary.main' : 'inherit',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: aiGeneratedFields.has('title') ? (
+                    <Tooltip title="AI Generated">
+                      <AutoAwesomeIcon color="primary" />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
               <TextField
                 fullWidth
                 label="Subtitle"
                 value={contentData[languages[currentLang]].subtitle}
                 onChange={(e) => updateField('subtitle', e.target.value)}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: aiGeneratedFields.has('subtitle') ? 'primary.main' : 'inherit',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: aiGeneratedFields.has('subtitle') ? (
+                    <Tooltip title="AI Generated">
+                      <AutoAwesomeIcon color="primary" />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
               <TextField
                 fullWidth
@@ -347,7 +424,21 @@ const ContentPage = () => {
                 label="Keywords"
                 value={contentData[languages[currentLang]].keywords}
                 onChange={(e) => updateField('keywords', e.target.value)}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: aiGeneratedFields.has('keywords') ? 'primary.main' : 'inherit',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: aiGeneratedFields.has('keywords') ? (
+                    <Tooltip title="AI Generated">
+                      <AutoAwesomeIcon color="primary" />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
               <TextField
                 fullWidth
@@ -356,7 +447,21 @@ const ContentPage = () => {
                 rows={4}
                 value={contentData[languages[currentLang]].description}
                 onChange={(e) => updateField('description', e.target.value)}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: aiGeneratedFields.has('description') ? 'primary.main' : 'inherit',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: aiGeneratedFields.has('description') ? (
+                    <Tooltip title="AI Generated">
+                      <AutoAwesomeIcon color="primary" />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
               <TextField
                 fullWidth
@@ -364,7 +469,21 @@ const ContentPage = () => {
                 value={contentData[languages[currentLang]].tags}
                 onChange={(e) => updateField('tags', e.target.value)}
                 helperText="Separate multiple tags with commas"
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: aiGeneratedFields.has('tags') ? 'primary.main' : 'inherit',
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: aiGeneratedFields.has('tags') ? (
+                    <Tooltip title="AI Generated">
+                      <AutoAwesomeIcon color="primary" />
+                    </Tooltip>
+                  ) : null,
+                }}
               />
               {contentData[languages[currentLang]].sections.map((section, index) => (
                 <Box key={section.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc' }}>

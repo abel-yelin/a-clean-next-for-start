@@ -65,8 +65,8 @@ export default defineConfig({
 ## 安装npm install postgres 
     创建db对象，给其他人调用
 
-##0828 完成了参考输入框和预览的规划
-
+##  0828 完成了参考输入框和预览的规划
+我们需要在语言列表中添加韩语和俄语
 
 ## 设计登录 next-auth
 ## zod提供用户数据校验的工作的

@@ -36,9 +36,9 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const languages = [
-  'English', '简体中文', '繁體中文', '日本語', 'Português', 
-  'Español', 'Deutsch', 'Français', 'Tiếng Việt', 'العربية',
-  'Nederlands', 'Polski'
+  'English', '简体中文', '繁體中文', '日本語', '한국어', 'Русский',
+  'Português', 'Español', 'Deutsch', 'Français', 'Tiếng Việt', 
+  'العربية', 'Nederlands', 'Polski'
 ];
 
 interface ContentData {

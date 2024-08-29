@@ -74,6 +74,9 @@ export default defineConfig({
 ##  还有对于S3的存储，然后返回链接，让AI直接读取链接，这个是不是一个比较好的方案
 ##  还需要优化关键词，让生成的文章更加精准
 ##![alt text](public\image.png)
+##  现在出现的问题：就是韩语和越南语会出现问题，偶尔会出现文章翻译之后无法正常填入表单
+
+
 
 ![alt text](public\image02.png)
 ## 设计登录 next-auth

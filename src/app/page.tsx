@@ -65,7 +65,8 @@ const ContentPage = () => {
   const [contentData, setContentData] = useState<Record<string, ContentData>>(
     Object.fromEntries(languages.map(lang => [lang, {
       title: '', subtitle: '', url: '', order: 0, category: '',
-      previewImages: [], keywords: '', description: '', tags: '', sections: []
+      previewImages: [], // 确保这里是一个空数组
+      keywords: '', description: '', tags: '', sections: []
     }]))
   );
   const [isGenerating, setIsGenerating] = useState(false);
@@ -426,18 +427,22 @@ const ContentPage = () => {
                   </Button>
                 </label>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', mt: 1 }}>
-                  {contentData[languages[currentLang]].previewImages.map((img, index) => (
-                    <Box key={index} sx={{ position: 'relative', m: 1 }}>
-                      <img src={img} alt={`Preview ${index + 1}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
-                      <IconButton
-                        size="small"
-                        onClick={() => removeImage(index)}
-                        sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
+                  {Array.isArray(contentData[languages[currentLang]].previewImages) && contentData[languages[currentLang]].previewImages.length > 0 ? (
+                    contentData[languages[currentLang]].previewImages.map((img, index) => (
+                      <Box key={index} sx={{ position: 'relative', m: 1 }}>
+                        <img src={img} alt={`Preview ${index + 1}`} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                        <IconButton
+                          size="small"
+                          onClick={() => removeImage(index)}
+                          sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'background.paper' }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography>No preview images available.</Typography> // 提示没有预览图像
+                  )}
                 </Box>
               </Box>
               <TextField

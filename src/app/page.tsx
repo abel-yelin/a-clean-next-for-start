@@ -223,27 +223,37 @@ const ContentPage = () => {
 
   const translateContent = async () => {
     setIsTranslating(true);
+    setAiGenerationStatus('正在翻译...');
     try {
-      // 这里调用后端API来翻译内容
-      const response = await fetch('/api/translate-content', {
+      const englishContent = contentData[languages[0]];
+      const targetLanguages = languages.slice(1);
+      const response = await fetch('/api/aitranslation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: contentData[languages[0]] }),
+        body: JSON.stringify({ content: englishContent, targetLanguages }),
       });
       if (response.ok) {
-        const data = await response.json();
-        setContentData(prev => ({
-          ...prev,
-          ...data
-        }));
+        const translations = await response.json();
+        setContentData(prev => {
+          const newContentData = { ...prev };
+          Object.entries(translations).forEach(([lang, content]) => {
+            if (content && typeof content === 'object') {
+              newContentData[lang] = content;
+            } else {
+              console.warn(`${lang} 翻译失败,保留原内容`);
+            }
+          });
+          return newContentData;
+        });
+        setAiGenerationStatus('翻译成功! (部分语言可能未成功翻译)');
       } else {
         throw new Error('Translation failed');
       }
     } catch (error) {
       console.error('Error translating content:', error);
-      alert('Failed to translate content');
+      setAiGenerationStatus('翻译失败,请重试');
     } finally {
       setIsTranslating(false);
     }
